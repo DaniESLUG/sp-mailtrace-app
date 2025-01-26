@@ -439,18 +439,29 @@
           <!-- Right column (25%) -->
           <div class="side-column">
             <!-- Request Preview -->
-            <div class="json-preview">
-              <h3>Request Preview</h3>
-              <pre>{{ formattedPayload }}</pre>
-            </div>
-
-            <!-- Response Preview -->
-            <div class="json-preview response-preview">
-              <h3>Response Preview</h3>
-              <div class="endpoint-info" :class="{ 'mock-warning': isMockEndpoint }">
-                {{ endpointInfo }}
+            <div class="preview-column">
+              <div class="preview-section">
+                <div class="preview-header" @click="toggleRequestPreview">
+                  <h3>Request Preview</h3>
+                  <span class="toggle-icon">{{ isRequestPreviewOpen ? '▼' : '▶' }}</span>
+                </div>
+                <div class="json-preview request-preview" v-show="isRequestPreviewOpen">
+                  <pre>{{ formattedPayload }}</pre>
+                </div>
               </div>
-              <pre>{{ formattedResponse }}</pre>
+
+              <div class="preview-section">
+                <div class="preview-header" @click="toggleResponsePreview">
+                  <h3>Response Preview</h3>
+                  <span class="toggle-icon">{{ isResponsePreviewOpen ? '▼' : '▶' }}</span>
+                </div>
+                <div class="json-preview response-preview" v-show="isResponsePreviewOpen">
+                  <div class="endpoint-info" :class="{ 'mock-warning': isMockEndpoint }">
+                    {{ endpointInfo }}
+                  </div>
+                  <pre>{{ formattedResponse }}</pre>
+                </div>
+              </div>
             </div>
 
             <div v-if="error" class="error-message" role="alert">
@@ -545,7 +556,9 @@ export default {
       },
       showDetailsModal: false,
       selectedMessageId: null,
-      selectedMessageDetails: null
+      selectedMessageDetails: null,
+      isRequestPreviewOpen: false,
+      isResponsePreviewOpen: false,
     }
   },
   computed: {
@@ -953,6 +966,12 @@ export default {
       this.showDetailsModal = false;
       this.selectedMessageId = null;
       this.selectedMessageDetails = null;
+    },
+    toggleRequestPreview() {
+      this.isRequestPreviewOpen = !this.isRequestPreviewOpen;
+    },
+    toggleResponsePreview() {
+      this.isResponsePreviewOpen = !this.isResponsePreviewOpen;
     }
   },
   watch: {
@@ -1074,8 +1093,8 @@ export default {
 
 .main-content {
   position: relative;
-  padding-top: 280px;
-  min-height: calc(100vh - 280px);
+  padding-top: 200px;
+  min-height: calc(100vh - 200px);
   flex: 1;
 }
 
@@ -1368,7 +1387,7 @@ input:checked + .slider:before {
 
 @media (max-width: 768px) {
   .main-content {
-    padding-top: 300px;
+    padding-top: 220px;
   }
 
   .header-content {
@@ -1495,6 +1514,7 @@ input:checked + .slider:before {
   grid-template-columns: 1fr 350px;
   gap: 2rem;
   align-items: start;
+  margin-top: 2rem;
 }
 
 .main-column {
@@ -1503,35 +1523,72 @@ input:checked + .slider:before {
 
 .side-column {
   position: sticky;
-  top: 400px;
+  top: 200px;
   height: fit-content;
-  margin-top: 4rem;
+  margin-top: 0;
   margin-right: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem; /* Add gap between previews */
 }
 
-.json-preview {
-  max-height: calc((100vh - 500px) / 2); /* Split available space */
+.preview-column {
+  margin-bottom: 1rem;
 }
 
-.response-preview {
-  margin-top: 1rem;
-}
-
-.placeholder-content {
-  margin-top: 4rem; /* Match the margin-top of side-column */
-  background: white;
-  padding: 1rem;
-  border-radius: 12px;
+.preview-section {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: white;
   box-shadow: var(--card-shadow);
 }
 
+.preview-header {
+  padding: 0.75rem 1rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.preview-header:hover {
+  background-color: #e9ecef;
+}
+
+.preview-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+.toggle-icon {
+  font-size: 0.875rem;
+  color: var(--text-color);
+}
+
+.json-preview.request-preview,
+.json-preview.response-preview {
+  border: none;
+  border-radius: 0 0 4px 4px;
+}
+
 /* Update responsive styles */
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 1fr 300px;
+  }
+}
+
 @media (max-width: 768px) {
-  .placeholder-content {
-    margin-top: 1rem; /* Reduce margin on mobile */
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .side-column {
+    position: static;
+    margin-top: 1rem;
+    margin-right: 0;
   }
 }
 
