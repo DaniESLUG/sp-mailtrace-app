@@ -182,6 +182,43 @@
                     >
                   </div>
 
+                  <div class="column-selector">
+                    <button 
+                      class="column-selector-button" 
+                      @click="toggleColumnSelector"
+                      :class="{ active: showColumnSelector }"
+                    >
+                      Columns
+                      <span class="column-count">({{ visibleColumns.length }})</span>
+                    </button>
+                    <div v-if="showColumnSelector" class="column-selector-dropdown">
+                      <div class="column-selector-header">
+                        <label>
+                          <input 
+                            type="checkbox" 
+                            :checked="allColumnsSelected"
+                            @change="toggleAllColumns"
+                          >
+                          All Columns
+                        </label>
+                      </div>
+                      <div class="column-selector-options">
+                        <label v-for="column in availableColumns" :key="column.key">
+                          <input 
+                            type="checkbox"
+                            v-model="visibleColumns"
+                            :value="column.key"
+                            :disabled="defaultColumns.includes(column.key)"
+                          >
+                          {{ column.label }}
+                          <span v-if="defaultColumns.includes(column.key)" class="default-badge">
+                            Default
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
                   <button 
                     class="clear-filters" 
                     @click="clearFilters"
@@ -256,115 +293,55 @@
                 <table>
                   <thead>
                     <tr>
-                      <th @click="sortBy('system')" class="sortable" :class="{ active: sortConfig.key === 'system' }">
-                        System
-                        <span class="sort-indicator" v-if="sortConfig.key === 'system'">
+                      <th v-for="column in availableColumns" 
+                          :key="column.key"
+                          v-show="visibleColumns.includes(column.key)"
+                          @click="sortBy(column.key)"
+                          :class="{ 
+                            sortable: column.sortable, 
+                            active: sortConfig.key === column.key,
+                            [column.class]: column.class 
+                          }"
+                      >
+                        {{ column.label }}
+                        <span class="sort-indicator" v-if="sortConfig.key === column.key">
                           {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
                         </span>
-                      </th>
-                      <th @click="sortBy('received')" class="sortable" :class="{ active: sortConfig.key === 'received' }">
-                        Received
-                        <span class="sort-indicator" v-if="sortConfig.key === 'received'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('fromEnv')" class="sortable" :class="{ active: sortConfig.key === 'fromEnv' }">
-                        From (Env)
-                        <span class="sort-indicator" v-if="sortConfig.key === 'fromEnv'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('fromHdr')" class="sortable" :class="{ active: sortConfig.key === 'fromHdr' }">
-                        From (Hdr)
-                        <span class="sort-indicator" v-if="sortConfig.key === 'fromHdr'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('to')" class="sortable" :class="{ active: sortConfig.key === 'to' }">
-                        To
-                        <span class="sort-indicator" v-if="sortConfig.key === 'to'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('subject')" class="sortable" :class="{ active: sortConfig.key === 'subject' }">
-                        Subject
-                        <span class="sort-indicator" v-if="sortConfig.key === 'subject'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('attachments')" class="sortable" :class="{ active: sortConfig.key === 'attachments' }">
-                        Attachments
-                        <span class="sort-indicator" v-if="sortConfig.key === 'attachments'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('senderIP')" class="sortable" :class="{ active: sortConfig.key === 'senderIP' }">
-                        Sender IP
-                        <span class="sort-indicator" v-if="sortConfig.key === 'senderIP'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('route')" class="sortable" :class="{ active: sortConfig.key === 'route' }">
-                        Route
-                        <span class="sort-indicator" v-if="sortConfig.key === 'route'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('id')" class="sortable" :class="{ active: sortConfig.key === 'id' }">
-                        ID
-                        <span class="sort-indicator" v-if="sortConfig.key === 'id'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('sent')" class="sortable" :class="{ active: sortConfig.key === 'sent' }">
-                        Sent
-                        <span class="sort-indicator" v-if="sortConfig.key === 'sent'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th @click="sortBy('status')" class="sortable" :class="{ active: sortConfig.key === 'status' }">
-                        Status
-                        <span class="sort-indicator" v-if="sortConfig.key === 'status'">
-                          {{ sortConfig.direction === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </th>
-                      <th class="details-column">
-                        Details
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(email, index) in paginatedResults" :key="index">
-                      <td>
-                        <span class="system-badge" :class="email.system.toLowerCase()">
-                          {{ email.system }}
-                        </span>
-                      </td>
-                      <td>{{ email.received }}</td>
-                      <td>{{ email.fromEnv }}</td>
-                      <td>{{ email.fromHdr }}</td>
-                      <td>{{ email.to }}</td>
-                      <td>{{ email.subject }}</td>
-                      <td>
-                        <span class="attachment-icon" v-if="email.attachments">📎</span>
-                      </td>
-                      <td>{{ email.senderIP }}</td>
-                      <td>{{ email.route }}</td>
-                      <td>{{ email.id }}</td>
-                      <td>{{ email.sent }}</td>
-                      <td>
-                        <span class="status-badge" :class="email.status.toLowerCase()">
-                          {{ email.status }}
-                        </span>
-                      </td>
-                      <td class="details-column">
-                        <button 
-                          class="details-button" 
-                          @click="showDetails(email.id)"
-                          title="Show more details"
-                        >
-                          <span class="details-icon">ℹ</span>
-                        </button>
+                      <td v-for="column in availableColumns" 
+                          :key="column.key"
+                          v-show="visibleColumns.includes(column.key)"
+                          :class="column.class"
+                      >
+                        <template v-if="column.key === 'system'">
+                          <span class="system-badge" :class="email.system.toLowerCase()">
+                            {{ email.system }}
+                          </span>
+                        </template>
+                        <template v-else-if="column.key === 'status'">
+                          <span class="status-badge" :class="email.status.toLowerCase()">
+                            {{ email.status }}
+                          </span>
+                        </template>
+                        <template v-else-if="column.key === 'attachments'">
+                          <span class="attachment-icon" v-if="email.attachments">📎</span>
+                        </template>
+                        <template v-else-if="column.key === 'details'">
+                          <button 
+                            class="details-button" 
+                            @click="showDetails(email.id)"
+                            title="Show more details"
+                          >
+                            <span class="details-icon">ℹ</span>
+                          </button>
+                        </template>
+                        <template v-else>
+                          {{ email[column.key] }}
+                        </template>
                       </td>
                     </tr>
                   </tbody>
@@ -559,6 +536,24 @@ export default {
       selectedMessageDetails: null,
       isRequestPreviewOpen: false,
       isResponsePreviewOpen: false,
+      showColumnSelector: false,
+      defaultColumns: ['system', 'received', 'fromEnv', 'to', 'subject', 'status', 'details'],
+      visibleColumns: ['system', 'received', 'fromEnv', 'to', 'subject', 'status', 'details'],
+      availableColumns: [
+        { key: 'system', label: 'System', sortable: true },
+        { key: 'received', label: 'Received', sortable: true },
+        { key: 'fromEnv', label: 'From (Env)', sortable: true },
+        { key: 'fromHdr', label: 'From (Hdr)', sortable: true },
+        { key: 'to', label: 'To', sortable: true },
+        { key: 'subject', label: 'Subject', sortable: true },
+        { key: 'attachments', label: 'Attachments', sortable: true },
+        { key: 'senderIP', label: 'Sender IP', sortable: true },
+        { key: 'route', label: 'Route', sortable: true },
+        { key: 'id', label: 'ID', sortable: true },
+        { key: 'sent', label: 'Sent', sortable: true },
+        { key: 'status', label: 'Status', sortable: true },
+        { key: 'details', label: 'Details', sortable: false, class: 'details-column' }
+      ]
     }
   },
   computed: {
@@ -764,6 +759,9 @@ export default {
         return 'Endpoint not configured, it will use mock data'
       }
       return `API Endpoint: ${this.apiEndpoint}`
+    },
+    allColumnsSelected() {
+      return this.visibleColumns.length === this.availableColumns.length
     }
   },
   methods: {
@@ -890,6 +888,8 @@ export default {
         }];
       } finally {
         this.isLoading = false;
+        // Reset columns to default on new search
+        this.visibleColumns = [...this.defaultColumns]
       }
     },
     getBasicPayload() {
@@ -972,6 +972,16 @@ export default {
     },
     toggleResponsePreview() {
       this.isResponsePreviewOpen = !this.isResponsePreviewOpen;
+    },
+    toggleColumnSelector() {
+      this.showColumnSelector = !this.showColumnSelector
+    },
+    toggleAllColumns() {
+      if (this.allColumnsSelected) {
+        this.visibleColumns = [...this.defaultColumns]
+      } else {
+        this.visibleColumns = this.availableColumns.map(col => col.key)
+      }
     }
   },
   watch: {
@@ -2019,5 +2029,77 @@ th.sortable.active::after {
 
 .close-button:hover {
   color: #000;
+}
+
+/* Add these styles */
+.column-selector {
+  position: relative;
+}
+
+.column-selector-button {
+  padding: 0.5rem 1rem;
+  background-color: #f8f9fa;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.column-selector-button.active {
+  background-color: #e9ecef;
+}
+
+.column-count {
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.column-selector-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  width: 200px;
+}
+
+.column-selector-header {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: #f8f9fa;
+}
+
+.column-selector-options {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.column-selector-options label {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.column-selector-options label:hover {
+  background-color: #f8f9fa;
+}
+
+.default-badge {
+  font-size: 0.65rem;
+  padding: 0.125rem 0.25rem;
+  background-color: #e9ecef;
+  border-radius: 3px;
+  margin-left: auto;
+  color: #666;
 }
 </style>
