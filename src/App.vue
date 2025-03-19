@@ -7,27 +7,38 @@
           <h1>IMTEC-MAIL Mail trace tool</h1>
           <div class="header-controls">
             <div class="systems-selector">
-              <label class="system-option" v-for="system in availableSystems" :key="system.id">
-                <input
-                  type="checkbox"
+              <div v-for="system in availableSystems" 
+                   :key="system.id" 
+                   class="checkbox-wrapper">
+                <input 
+                  type="checkbox" 
+                  :id="'system-' + system.id"
                   v-model="selectedSystems"
                   :value="system.id"
+                  class="checkbox-input"
                 >
-                <span class="system-label">{{ system.label }}</span>
-              </label>
+                <label 
+                  :for="'system-' + system.id"
+                  class="checkbox-label"
+                >
+                  {{ system.label }}
+                </label>
+              </div>
             </div>
             <div class="mode-switch">
-              <label class="switch-label">
-                <span class="mode-text">{{ isAdvancedMode ? 'Advanced Mode' : 'Basic Mode' }}</span>
-                <div class="switch">
+              <div class="switch-wrapper">
+                <label class="switch">
                   <input 
                     type="checkbox" 
                     v-model="isAdvancedMode"
-                    :aria-label="isAdvancedMode ? 'Switch to Basic Mode' : 'Switch to Advanced Mode'"
+                    id="mode-switch"
                   >
-                  <span class="slider"></span>
-                </div>
-              </label>
+                  <span class="switch-slider"></span>
+                </label>
+                <span class="checkbox-label">
+                  {{ isAdvancedMode ? 'Advanced Mode' : 'Basic Mode' }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -38,75 +49,80 @@
             <div class="form-row">
               <!-- Show From and To only in Basic Mode -->
               <template v-if="!isAdvancedMode">
-                <base-input
-                  id="from"
-                  v-model="formData.from"
-                  label="From"
-                  type="email"
-                  placeholder="sender@example.com"
-                  :validation-rules="{ required: false, email: true }"
-                  @validation-error="handleValidationError"
-                />
+                <div class="form-group">
+                  <label for="from" class="form-label">From</label>
+                  <input
+                    id="from"
+                    v-model="formData.from"
+                    type="email"
+                    placeholder="sender@example.com"
+                    class="form-control"
+                    :class="{ 'is-invalid': formErrors.includes('from') }"
+                  >
+                </div>
 
-                <base-input
-                  id="to"
-                  v-model="formData.to"
-                  label="To"
-                  type="email"
-                  placeholder="recipient@example.com"
-                  :validation-rules="{ required: false, email: true }"
-                  @validation-error="handleValidationError"
-                />
+                <div class="form-group">
+                  <label for="to" class="form-label">To</label>
+                  <input
+                    id="to"
+                    v-model="formData.to"
+                    type="email"
+                    placeholder="recipient@example.com"
+                    class="form-control"
+                    :class="{ 'is-invalid': formErrors.includes('to') }"
+                  >
+                </div>
               </template>
 
               <!-- Show Message-ID only in Advanced Mode -->
               <template v-else>
-                <base-input
-                  id="messageId"
-                  v-model="formData.messageId"
-                  label="Message-ID"
-                  type="text"
-                  placeholder="Enter Message ID"
-                  :validation-rules="{ required: false }"
-                  @validation-error="handleValidationError"
-                />
+                <div class="form-group">
+                  <label for="messageId" class="form-label">Message-ID</label>
+                  <input
+                    id="messageId"
+                    v-model="formData.messageId"
+                    type="text"
+                    placeholder="Enter Message ID"
+                    class="form-control"
+                    :class="{ 'is-invalid': formErrors.includes('messageId') }"
+                  >
+                </div>
               </template>
 
-              <base-input
-                id="startDate"
-                v-model="formData.startDate"
-                label="Start Date"
-                type="date"
-                :validation-rules="{
-                  required: true,
-                  minDate: minDate,
-                  maxDate: today,
-                  custom: validateStartDate
-                }"
-                @validation-error="handleValidationError"
-              />
+              <div class="form-group">
+                <label for="startDate" class="form-label">Start Date</label>
+                <input
+                  id="startDate"
+                  v-model="formData.startDate"
+                  type="date"
+                  :min="minDate"
+                  :max="today"
+                  class="form-control"
+                  :class="{ 'is-invalid': formErrors.includes('startDate') }"
+                >
+              </div>
 
-              <base-input
-                id="endDate"
-                v-model="formData.endDate"
-                label="End Date"
-                type="date"
-                :validation-rules="{
-                  required: true,
-                  minDate: formData.startDate || minDate,
-                  maxDate: maxDate,
-                  custom: validateEndDate
-                }"
-                @validation-error="handleValidationError"
-              />
+              <div class="form-group">
+                <label for="endDate" class="form-label">End Date</label>
+                <input
+                  id="endDate"
+                  v-model="formData.endDate"
+                  type="date"
+                  :min="formData.startDate || minDate"
+                  :max="maxDate"
+                  class="form-control"
+                  :class="{ 'is-invalid': formErrors.includes('endDate') }"
+                >
+              </div>
 
               <div class="submit-group">
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   :disabled="isLoading || hasValidationErrors"
-                  class="submit-button"
+                  class="btn btn-primary"
+                  @click="handleSubmit"
                 >
-                  <span v-if="isLoading" class="loader"></span>
+                  <span v-if="isLoading" class="spinner-border"></span>
                   <span v-else>Search</span>
                 </button>
               </div>
@@ -118,137 +134,110 @@
 
     <main class="main-content">
       <div class="content-wrapper">
-        <!-- Add two-column layout -->
         <div class="content-grid">
-          <!-- Left column (75%) -->
           <div class="main-column">
-            <!-- This will be for future content -->
             <div class="placeholder-content">
               <div class="results-header">
                 <h3>Results</h3>
                 <div class="filters">
-                  <select 
-                    v-model="filters.system" 
+                  <BFormSelect
+                    v-model="filters.system"
+                    :options="[{ value: '', text: 'All Systems' }, ...availableSystemOptions.map(system => ({ value: system, text: system }))]"
                     class="filter-select"
                     @change="applyFilters"
-                  >
-                    <option value="">All Systems</option>
-                    <option 
-                      v-for="system in availableSystemOptions" 
-                      :key="system" 
-                      :value="system"
-                    >
-                      {{ system }}
-                    </option>
-                  </select>
+                  />
 
-                  <select 
-                    v-model="filters.status" 
+                  <BFormSelect
+                    v-model="filters.status"
+                    :options="[{ value: '', text: 'All Statuses' }, ...availableStatusOptions.map(status => ({ value: status, text: status }))]"
                     class="filter-select"
                     @change="applyFilters"
-                  >
-                    <option value="">All Statuses</option>
-                    <option 
-                      v-for="status in availableStatusOptions" 
-                      :key="status" 
-                      :value="status"
-                    >
-                      {{ status }}
-                    </option>
-                  </select>
+                  />
 
-                  <select 
-                    v-model="filters.route" 
+                  <BFormSelect
+                    v-model="filters.route"
+                    :options="[{ value: '', text: 'All Routes' }, ...availableRouteOptions.map(route => ({ value: route, text: route }))]"
                     class="filter-select"
                     @change="applyFilters"
-                  >
-                    <option value="">All Routes</option>
-                    <option 
-                      v-for="route in availableRouteOptions" 
-                      :key="route" 
-                      :value="route"
-                    >
-                      {{ route }}
-                    </option>
-                  </select>
+                  />
 
-                  <div class="filter-input">
-                    <input 
-                      type="text" 
-                      v-model="filters.messageId" 
-                      placeholder="Filter by Message ID"
-                      @input="applyFilters"
-                      class="message-id-filter"
-                    >
-                  </div>
+                  <BFormInput
+                    v-model="filters.messageId"
+                    placeholder="Filter by Message ID"
+                    @input="applyFilters"
+                    class="message-id-filter"
+                  />
 
                   <div class="column-selector">
                     <button 
-                      class="column-selector-button" 
+                      class="btn btn-outline-secondary btn-sm"
                       @click="toggleColumnSelector"
-                      :class="{ active: showColumnSelector }"
                     >
                       Columns
-                      <span class="column-count">({{ visibleColumns.length }})</span>
                     </button>
-                    <div v-if="showColumnSelector" class="column-selector-dropdown">
-                      <div class="column-selector-header">
-                        <label>
+                    <div v-if="showColumnSelector" class="column-dropdown">
+                      <div class="column-header">
+                        <label class="column-checkbox">
                           <input 
                             type="checkbox" 
                             :checked="allColumnsSelected"
                             @change="toggleAllColumns"
                           >
-                          All Columns
+                          Select All
                         </label>
                       </div>
-                      <div class="column-selector-options">
-                        <label v-for="column in availableColumns" :key="column.key">
+                      <div class="column-divider"></div>
+                      <div class="column-list">
+                        <label 
+                          v-for="column in availableColumns"
+                          :key="column.key"
+                          class="column-checkbox"
+                        >
                           <input 
                             type="checkbox"
-                            v-model="visibleColumns"
-                            :value="column.key"
+                            :checked="visibleColumns.includes(column.key)"
                             :disabled="defaultColumns.includes(column.key)"
+                            @change="toggleColumn(column.key)"
                           >
                           {{ column.label }}
-                          <span v-if="defaultColumns.includes(column.key)" class="default-badge">
-                            Default
+                          <span 
+                            v-if="defaultColumns.includes(column.key)"
+                            class="required-badge"
+                          >
+                            Required
                           </span>
                         </label>
                       </div>
                     </div>
                   </div>
 
-                  <button 
-                    class="clear-filters" 
-                    @click="clearFilters"
+                  <BButton
                     v-if="hasActiveFilters"
+                    variant="outline-secondary"
+                    @click="clearFilters"
+                    class="clear-filters"
                   >
                     Clear Filters
-                  </button>
+                  </BButton>
                 </div>
               </div>
 
               <!-- Add top pagination -->
               <div v-if="searchResults.length" class="pagination-controls top">
-                <div class="rows-per-page">
-                  <label>
-                    Rows per page:
-                    <select 
-                      v-model="pagination.rowsPerPage"
-                      @change="changeRowsPerPage"
-                      class="rows-select"
-                    >
-                      <option 
-                        v-for="option in pagination.rowsPerPageOptions" 
-                        :key="option" 
-                        :value="option"
-                      >
-                        {{ option }}
-                      </option>
-                    </select>
-                  </label>
-                </div>
+                <BFormGroup
+                  label="Rows per page:"
+                  label-for="rows-per-page"
+                  label-cols="auto"
+                  class="mb-0"
+                >
+                  <BFormSelect
+                    id="rows-per-page"
+                    v-model="pagination.rowsPerPage"
+                    :options="pagination.rowsPerPageOptions.map(option => ({ value: option, text: option }))"
+                    @change="changeRowsPerPage"
+                    class="rows-select"
+                  />
+                </BFormGroup>
 
                 <div class="pagination-info">
                   {{ paginationInfo }}
@@ -256,41 +245,27 @@
 
                 <div class="pagination-buttons">
                   <button 
-                    @click="changePage(1)" 
+                    @click="pagination.currentPage--" 
                     :disabled="pagination.currentPage === 1"
-                    class="page-button"
+                    class="pagination-btn"
                   >
-                    ⟪
+                    <span class="pagination-icon">←</span>
                   </button>
+                  <span class="pagination-info">
+                    Page {{ pagination.currentPage }} of {{ totalPages }}
+                  </span>
                   <button 
-                    @click="changePage(pagination.currentPage - 1)" 
-                    :disabled="pagination.currentPage === 1"
-                    class="page-button"
+                    @click="pagination.currentPage++" 
+                    :disabled="pagination.currentPage === pagination.totalPages"
+                    class="pagination-btn"
                   >
-                    ‹
-                  </button>
-                  
-                  <span class="page-number">{{ pagination.currentPage }} / {{ totalPages }}</span>
-                  
-                  <button 
-                    @click="changePage(pagination.currentPage + 1)" 
-                    :disabled="pagination.currentPage === totalPages"
-                    class="page-button"
-                  >
-                    ›
-                  </button>
-                  <button 
-                    @click="changePage(totalPages)" 
-                    :disabled="pagination.currentPage === totalPages"
-                    class="page-button"
-                  >
-                    ⟫
+                    <span class="pagination-icon">→</span>
                   </button>
                 </div>
               </div>
 
               <div v-if="searchResults.length" class="results-table">
-                <table>
+                <table class="table">
                   <thead>
                     <tr>
                       <th v-for="column in availableColumns" 
@@ -318,12 +293,12 @@
                           :class="column.class"
                       >
                         <template v-if="column.key === 'system'">
-                          <span class="system-badge" :class="email.system.toLowerCase()">
+                          <span class="badge" :class="email.system.toLowerCase()">
                             {{ email.system }}
                           </span>
                         </template>
                         <template v-else-if="column.key === 'status'">
-                          <span class="status-badge" :class="email.status.toLowerCase()">
+                          <span class="badge" :class="email.status.toLowerCase()">
                             {{ email.status }}
                           </span>
                         </template>
@@ -332,7 +307,7 @@
                         </template>
                         <template v-else-if="column.key === 'details'">
                           <button 
-                            class="details-button" 
+                            class="btn btn-link" 
                             @click="showDetails(email.id)"
                             title="Show more details"
                           >
@@ -374,35 +349,21 @@
 
                   <div class="pagination-buttons">
                     <button 
-                      @click="changePage(1)" 
+                      @click="pagination.currentPage--" 
                       :disabled="pagination.currentPage === 1"
-                      class="page-button"
+                      class="pagination-btn"
                     >
-                      ⟪
+                      <span class="pagination-icon">←</span>
                     </button>
+                    <span class="pagination-info">
+                      Page {{ pagination.currentPage }} of {{ totalPages }}
+                    </span>
                     <button 
-                      @click="changePage(pagination.currentPage - 1)" 
-                      :disabled="pagination.currentPage === 1"
-                      class="page-button"
+                      @click="pagination.currentPage++" 
+                      :disabled="pagination.currentPage === pagination.totalPages"
+                      class="pagination-btn"
                     >
-                      ‹
-                    </button>
-                    
-                    <span class="page-number">{{ pagination.currentPage }} / {{ totalPages }}</span>
-                    
-                    <button 
-                      @click="changePage(pagination.currentPage + 1)" 
-                      :disabled="pagination.currentPage === totalPages"
-                      class="page-button"
-                    >
-                      ›
-                    </button>
-                    <button 
-                      @click="changePage(totalPages)" 
-                      :disabled="pagination.currentPage === totalPages"
-                      class="page-button"
-                    >
-                      ⟫
+                      <span class="pagination-icon">→</span>
                     </button>
                   </div>
                 </div>
@@ -458,15 +419,17 @@
       {{ modalError }}
     </div>
 
-    <!-- Add this modal component after the error modal -->
-    <div v-if="showDetailsModal" class="details-modal">
-      <div class="modal-content">
+    <!-- Replace the details modal with a custom modal -->
+    <div v-if="showDetailsModal" class="modal-backdrop" @click="closeDetailsModal">
+      <div class="modal" @click.stop>
         <div class="modal-header">
-          <h3>Message Details</h3>
-          <button class="close-button" @click="closeDetailsModal">&times;</button>
+          <h3 class="modal-title">Message Details</h3>
+          <button class="modal-close" @click="closeDetailsModal">&times;</button>
         </div>
         <div class="modal-body">
-          <pre>{{ selectedMessageDetails }}</pre>
+          <div class="message-details-content">
+            <pre>{{ selectedMessageDetails }}</pre>
+          </div>
         </div>
       </div>
     </div>
@@ -474,15 +437,11 @@
 </template>
 
 <script>
-import BaseInput from './components/BaseInput.vue'
 import { mockEmailData } from './mocks/emailData.js'
 import { mockMessageDetails } from './mocks/messageDetails.js'
 
 export default {
   name: 'App',
-  components: {
-    BaseInput
-  },
   data() {
     const today = new Date().toISOString().split('T')[0]
     // Calculate yesterday's date
@@ -845,35 +804,20 @@ export default {
                 systems: this.selectedSystems
               };
 
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+          const response = await fetch(this.apiEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+          });
 
-          try {
-            const response = await fetch(this.apiEndpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(payload),
-              signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            this.searchResults = data.data[0].trackedEmails;
-          } catch (error) {
-            if (error.name === 'AbortError') {
-              throw new Error('Request timeout after 15 seconds');
-            }
-            throw error;
-          } finally {
-            clearTimeout(timeoutId);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
+
+          const data = await response.json();
+          this.searchResults = data.data[0].trackedEmails;
         }
       } catch (error) {
         console.error('Error details:', error);
@@ -967,6 +911,11 @@ export default {
       this.selectedMessageId = null;
       this.selectedMessageDetails = null;
     },
+    handleEscapeKey(event) {
+      if (event.key === 'Escape' && this.showDetailsModal) {
+        this.closeDetailsModal();
+      }
+    },
     toggleRequestPreview() {
       this.isRequestPreviewOpen = !this.isRequestPreviewOpen;
     },
@@ -982,67 +931,22 @@ export default {
       } else {
         this.visibleColumns = this.availableColumns.map(col => col.key)
       }
+    },
+    toggleColumn(key) {
+      if (this.visibleColumns.includes(key)) {
+        this.visibleColumns = this.visibleColumns.filter(k => k !== key)
+      } else {
+        this.visibleColumns.push(key)
+      }
     }
   },
-  watch: {
-    'formData.messageId': {
-      handler(newValue) {
-        if (newValue) {
-          // Clear From and To fields when Message-ID is entered
-          this.formData.from = '';
-          this.formData.to = '';
-          
-          // Clear any validation errors for From and To
-          this.formErrors = this.formErrors.filter(id => id !== 'from' && id !== 'to');
-        }
-      }
-    },
-    'formData.from': {
-      handler(newValue) {
-        if (newValue && this.formData.messageId) {
-          // Clear Message-ID when From is entered
-          this.formData.messageId = '';
-          this.formErrors = this.formErrors.filter(id => id !== 'messageId');
-        }
-      }
-    },
-    'formData.to': {
-      handler(newValue) {
-        if (newValue && this.formData.messageId) {
-          // Clear Message-ID when To is entered
-          this.formData.messageId = '';
-          this.formErrors = this.formErrors.filter(id => id !== 'messageId');
-        }
-      }
-    },
-    isAdvancedMode: {
-      handler(newValue) {
-        if (newValue) {
-          // When switching to advanced mode
-          this.formData.from = '*'
-          this.formData.to = '*'
-          this.formData.messageId = ''  // Clear message ID when switching to advanced mode
-          // Clear any validation errors for these fields
-          this.formErrors = this.formErrors.filter(id => id !== 'from' && id !== 'to')
-        } else {
-          // When switching back to basic mode
-          this.formData.from = ''
-          this.formData.to = ''
-          this.formData.messageId = '*'  // Set message ID to wildcard in basic mode
-          // Clear any validation errors
-          this.formErrors = this.formErrors.filter(id => id !== 'messageId')
-        }
-      }
-    },
-    'sortedResults.length'() {
-      // Reset to first page when results change
-      this.pagination.currentPage = 1
-    }
+  mounted() {
+    window.addEventListener('keydown', this.handleEscapeKey);
   },
-  // Replace beforeDestroy with beforeUnmount
   beforeUnmount() {
+    window.removeEventListener('keydown', this.handleEscapeKey);
     if (this.modalErrorTimeout) {
-      clearTimeout(this.modalErrorTimeout)
+      clearTimeout(this.modalErrorTimeout);
     }
   }
 }
@@ -1050,13 +954,13 @@ export default {
 
 <style>
 :root {
-  --primary-color: #2196F3;
-  --primary-hover: #1976D2;
-  --error-color: #f44336;
-  --text-color: #2c3e50;
-  --border-color: #ddd;
-  --background-color: #f5f5f5;
-  --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  --primary-color: #0d6efd;
+  --primary-hover: #0b5ed7;
+  --error-color: #dc3545;
+  --text-color: #212529;
+  --border-color: #dee2e6;
+  --background-color: #f8f9fa;
+  --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 #app {
@@ -1073,45 +977,44 @@ export default {
 .app-header {
   background: white;
   box-shadow: var(--card-shadow);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: relative;
+  width: 100%;
   z-index: 100;
+  padding: 0.75rem 0;
 }
 
 .header-content {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem 2rem;
+  padding: 0 1.5rem;
 }
 
 .header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-color);
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: var(--primary-color);
 }
 
 .main-content {
   position: relative;
-  padding-top: 200px;
-  min-height: calc(100vh - 200px);
+  padding-top: 2rem;
+  min-height: calc(100vh - 100px);
   flex: 1;
 }
 
 .content-wrapper {
-  max-width: none;
-  margin: 0;
-  padding: 0 1rem 0 2rem;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 2rem;
 }
 
 .form-container {
@@ -1172,7 +1075,9 @@ export default {
 }
 
 .header-form {
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
+  background-color: white;
+  width: 100%;
 }
 
 .search-form {
@@ -1181,24 +1086,51 @@ export default {
 
 .form-row {
   display: flex;
-  gap: 2rem;
-  align-items: flex-end;
+  gap: 0.75rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
 }
 
 .form-row > * {
   flex: 1;
-  min-width: 0;
+  min-width: 180px;
+}
+
+.form-group {
+  margin-bottom: 0.75rem;
+  width: 100%;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--text-color);
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .submit-group {
-  flex: 0 0 auto;
-  width: auto;
+  display: flex;
+  align-items: flex-end;
   margin-bottom: 0.5rem;
 }
 
 .submit-button {
-  height: 40px;
-  padding: 0 1.5rem;
+  height: 32px;
+  padding: 0 1rem;
   white-space: nowrap;
   background-color: var(--primary-color);
   color: white;
@@ -1207,6 +1139,7 @@ export default {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.875rem;
 }
 
 .submit-button:hover:not(:disabled) {
@@ -1231,9 +1164,18 @@ export default {
 .switch-label {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-weight: 500;
+  gap: 0.5rem;
+  margin-bottom: 0;
+}
+
+.form-check-input {
+  margin-top: 0;
   cursor: pointer;
+}
+
+.form-check-label {
+  cursor: pointer;
+  user-select: none;
 }
 
 .mode-text {
@@ -1310,43 +1252,33 @@ input:checked + .slider:before {
 .error-message {
   background-color: var(--error-color);
   color: white;
-  padding: 1rem;
-  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
   margin-top: 1rem;
-  text-align: center;
   font-size: 0.875rem;
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
 }
 
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
 }
 
 .systems-selector {
   display: flex;
-  gap: 1.5rem;
+  gap: 0.75rem;
   align-items: center;
+  flex-wrap: wrap;
+  margin-right: 0.75rem;
 }
 
 .system-option {
+  margin-bottom: 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  user-select: none;
+  font-size: 0.875rem;
 }
 
 .system-option input[type="checkbox"] {
@@ -1397,11 +1329,11 @@ input:checked + .slider:before {
 
 @media (max-width: 768px) {
   .main-content {
-    padding-top: 220px;
+    padding-top: 1rem;
   }
 
   .header-content {
-    padding: 1rem;
+    padding: 0 1rem;
   }
 
   .header-top {
@@ -1444,555 +1376,291 @@ input:checked + .slider:before {
 
 /* Update form styles for inline labels */
 .form-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0;
-  flex-wrap: nowrap;
-  min-width: 250px;
+  margin-bottom: 1rem;
 }
 
 .form-label {
-  font-size: 0.875rem;
-  margin: 0;
-  white-space: nowrap;
-  width: auto;
-  flex: 0 0 auto;
-}
-
-.form-input {
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  height: 36px;
-  flex: 1;
-  min-width: 0;
-}
-
-/* Update header spacing */
-.header-top {
+  font-weight: 500;
   margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
 }
 
-/* Update main content padding */
-.main-content {
-  padding-top: 140px;
+/* Update input styles */
+.form-control {
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
-/* Update responsive styles */
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Update button styles */
+.btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Update checkbox styles */
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-check-input {
+  margin-top: 0;
+}
+
+/* Update select styles */
+.form-select {
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: white;
+}
+
+/* Update table styles */
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  background-color: var(--background-color);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Update badge styles */
+.badge {
+  padding: 0.35em 0.65em;
+  font-size: 0.75em;
+  font-weight: 600;
+  border-radius: 0.25rem;
+}
+
+/* Update dropdown styles */
+.dropdown-menu {
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+  padding: 0.5rem;
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Update pagination styles */
+.pagination {
+  margin-bottom: 0;
+}
+
+.page-link {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--primary-color);
+}
+
+.page-item.active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Update modal styles */
+.modal-content {
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
+}
+
+.modal-body {
+  padding: 1rem;
+}
+
+/* Update spinner styles */
+.spinner-border {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}
+
+/* Responsive adjustments */
 @media (max-width: 1200px) {
-  .form-group {
-    min-width: 280px;
+  .form-row > * {
+    flex: 1 1 calc(50% - 0.5rem);
   }
 }
 
 @media (max-width: 768px) {
-  .form-group {
-    width: 100%;
+  .form-row > * {
+    flex: 1 1 100%;
   }
-
-  .form-row {
+  
+  .header-content {
+    padding: 0 1rem;
+  }
+  
+  .header-top {
     flex-direction: column;
     gap: 1rem;
   }
-
-  .form-row > * {
-    width: 100%;
-  }
 }
 
-/* Add specific styles for date inputs */
-.form-group[data-type="date"] {
-  min-width: 200px; /* Smaller minimum width for date fields */
-  max-width: 200px; /* Maximum width for date fields */
+/* Custom utility classes */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.form-group[data-type="date"] .form-input {
-  width: 130px; /* Fixed width for date input */
-  flex: none; /* Override flex: 1 */
+.cursor-pointer {
+  cursor: pointer;
 }
 
-/* Update email/text input styles to take remaining space */
-.form-group[data-type="email"],
-.form-group[data-type="text"] {
-  flex: 1;
-  min-width: 280px;
+/* Keep existing custom styles for specific components */
+.system-badge,
+.status-badge,
+.attachment-icon,
+.details-button,
+.details-icon {
+  /* Keep these styles as they are specific to your application */
 }
 
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 2rem;
-  align-items: start;
-  margin-top: 2rem;
-}
-
-.main-column {
-  min-height: 200px; /* Temporary, remove when adding content */
-}
-
-.side-column {
-  position: sticky;
-  top: 200px;
-  height: fit-content;
-  margin-top: 0;
-  margin-right: 1rem;
-}
-
-.preview-column {
-  margin-bottom: 1rem;
-}
-
+/* Update preview section styles */
 .preview-section {
-  margin-bottom: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
   background-color: white;
+  border-radius: 0.5rem;
   box-shadow: var(--card-shadow);
+  margin-bottom: 1rem;
 }
 
 .preview-header {
   padding: 0.75rem 1rem;
-  background-color: #f8f9fa;
   border-bottom: 1px solid var(--border-color);
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  user-select: none;
+  background-color: var(--background-color);
+  border-radius: 0.5rem 0.5rem 0 0;
 }
 
-.preview-header:hover {
-  background-color: #e9ecef;
+/* Keep the rest of your custom styles that are specific to your application */
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 75% 25%;
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
-.preview-header h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--text-color);
+.main-column {
+  background: white;
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
 }
 
-.toggle-icon {
-  font-size: 0.875rem;
-  color: var(--text-color);
+.side-column {
+  background: white;
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
 }
 
-.json-preview.request-preview,
-.json-preview.response-preview {
-  border: none;
-  border-radius: 0 0 4px 4px;
-}
-
-/* Update responsive styles */
 @media (max-width: 1200px) {
-  .content-grid {
-    grid-template-columns: 1fr 300px;
-  }
-}
-
-@media (max-width: 768px) {
   .content-grid {
     grid-template-columns: 1fr;
   }
   
   .side-column {
     position: static;
-    margin-top: 1rem;
-    margin-right: 0;
+    margin-top: 2rem;
   }
 }
 
-.error-modal {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--error-color);
-  color: white;
-  padding: 1rem 2rem;
-  border-radius: 8px;
-  z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  font-size: 0.875rem;
-  max-width: 90%;
-  text-align: center;
-  animation: modalEnter 0.4s ease-out, modalExit 0.4s ease-in 2.6s;
-}
-
-@keyframes modalEnter {
-  0% {
-    transform: translate(-50%, -100px);
-    opacity: 0;
-  }
-  60% {
-    transform: translate(-50%, 10px);
-    opacity: 0.8;
-  }
-  100% {
-    transform: translate(-50%, 0);
-    opacity: 1;
-  }
-}
-
-@keyframes modalExit {
-  0% {
-    transform: translate(-50%, 0);
-    opacity: 1;
-  }
-  60% {
-    transform: translate(-50%, 10px);
-    opacity: 0.8;
-  }
-  100% {
-    transform: translate(-50%, -100px);
-    opacity: 0;
-  }
-}
-
-.results-table {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-th, td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border-color);
-}
-
-th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-tr:hover {
-  background-color: #f8f9fa;
-}
-
-.system-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-weight: 500;
-  font-size: 0.75rem;
-}
-
-.system-badge.exchange {
-  background-color: #e3f2fd;
-  color: #1565c0;
-}
-
-.system-badge.mimecast {
-  background-color: #f3e5f5;
-  color: #7b1fa2;
-}
-
-.system-badge.echoworx {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-weight: 500;
-  font-size: 0.75rem;
-}
-
-.status-badge.delivered {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-badge.held {
-  background-color: #fff3e0;
-  color: #e65100;
-}
-
-.status-badge.bounced {
-  background-color: #ffebee;
-  color: #c62828;
-}
-
-.attachment-icon {
-  font-size: 1rem;
-}
-
-.no-results {
-  text-align: center;
-  padding: 2rem;
-  color: #666;
-  font-style: italic;
-}
-
-.sortable {
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-  padding-right: 1.5rem;
-}
-
-.sortable:hover {
-  background-color: #edf2f7;
-}
-
-.sortable.active {
-  background-color: #e2e8f0;
-}
-
-.sort-indicator {
-  position: absolute;
-  right: 0.5rem;
-  color: var(--primary-color);
-}
-
-th.sortable::after {
-  content: '↕';
-  position: absolute;
-  right: 0.5rem;
-  opacity: 0.3;
-}
-
-th.sortable:hover::after {
-  opacity: 0.7;
-}
-
-th.sortable.active::after {
-  display: none;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.message-details-content {
+  max-height: 70vh;
+  overflow-y: auto;
   padding: 1rem;
-  border-top: 1px solid var(--border-color);
   background-color: #f8f9fa;
+  border-radius: 0.375rem;
 }
 
-.rows-per-page {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.message-details-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
   font-size: 0.875rem;
+  line-height: 1.5;
 }
 
-.rows-select {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: white;
-  font-size: 0.875rem;
-}
-
-.pagination-info {
-  font-size: 0.875rem;
-  color: #666;
-}
-
-.pagination-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.page-button {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--border-color);
-  background-color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  min-width: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.page-button:hover:not(:disabled) {
-  background-color: #edf2f7;
-}
-
-.page-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.page-number {
-  padding: 0 0.5rem;
-  font-size: 0.875rem;
-}
-
-.results-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.filters {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.filter-select {
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: white;
-  font-size: 0.875rem;
-  min-width: 120px;
-}
-
-.message-id-filter {
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 0.875rem;
-  width: 150px;
-}
-
-.clear-filters {
-  padding: 0.5rem 1rem;
-  background-color: #f8f9fa;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  color: var(--text-color);
-  transition: all 0.2s;
-}
-
-.clear-filters:hover {
-  background-color: #e9ecef;
-}
-
-@media (max-width: 1200px) {
-  .results-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .filters {
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 768px) {
-  .filter-select,
-  .message-id-filter {
-    width: 100%;
-    min-width: 0;
-  }
-}
-
-.endpoint-info {
-  font-size: 0.75rem;
-  padding: 0.5rem;
-  margin-bottom: 0.75rem;
-  border-radius: 4px;
-  background-color: #e3f2fd;
-  color: #1565c0;
-}
-
-.endpoint-info.mock-warning {
-  background-color: #fff3e0;
-  color: #e65100;
-}
-
-.app-footer {
-  margin-top: 4rem;
-  padding: 1rem;
-  text-align: center;
-  font-size: 0.75rem;
-  color: #666;
-  border-top: 1px solid var(--border-color);
-  background-color: #f8f9fa;
-}
-
-/* Add styles for top pagination */
-.pagination-controls.top {
-  border-top: none;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 1rem;
-}
-
-/* Update responsive styles */
-@media (max-width: 768px) {
-  .pagination-controls.top {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-
-  .pagination-controls.top .pagination-buttons {
-    justify-content: center;
-  }
-
-  .pagination-controls.top .rows-per-page {
-    justify-content: center;
-  }
-
-  .pagination-controls.top .pagination-info {
-    text-align: center;
-  }
-}
-
-.details-column {
-  width: 50px;
-  text-align: center !important;
-}
-
-.details-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
-}
-
-.details-button:hover {
-  background-color: #e2e8f0;
-}
-
-.details-icon {
-  font-size: 1rem;
-  color: var(--primary-color);
-}
-
-.details-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+.modal-lg {
+  max-width: 900px;
 }
 
 .modal-content {
-  background-color: white;
-  border-radius: 8px;
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
+}
+
+.modal-body {
+  padding: 1rem;
+}
+
+/* Modal styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1055;
   width: 90%;
   max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
+  background: white;
+  border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -2004,102 +1672,102 @@ th.sortable.active::after {
   align-items: center;
 }
 
-.modal-body {
-  padding: 1rem;
+.modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
-.modal-body pre {
-  white-space: pre-wrap;
-  font-size: 0.875rem;
-  background-color: #f8f9fa;
-  padding: 1rem;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-
-.close-button {
+.modal-close {
   background: none;
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  padding: 0.5rem;
-  color: #666;
-  transition: color 0.2s;
+  padding: 0.25rem;
+  color: var(--text-color);
 }
 
-.close-button:hover {
-  color: #000;
-}
-
-/* Add these styles */
-.column-selector {
-  position: relative;
-}
-
-.column-selector-button {
-  padding: 0.5rem 1rem;
-  background-color: #f8f9fa;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.column-selector-button.active {
-  background-color: #e9ecef;
-}
-
-.column-count {
-  color: #666;
-  font-size: 0.75rem;
-}
-
-.column-selector-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
-  background-color: white;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  width: 200px;
-}
-
-.column-selector-header {
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--border-color);
-  background-color: #f8f9fa;
-}
-
-.column-selector-options {
-  max-height: 300px;
+.modal-body {
+  padding: 1rem;
+  max-height: 70vh;
   overflow-y: auto;
-  padding: 0.5rem;
 }
 
-.column-selector-options label {
-  display: flex;
-  align-items: center;
+.message-details-content {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.message-details-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-family: monospace;
+}
+
+/* Table styles */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.results-table th,
+.results-table td {
   padding: 0.5rem;
-  gap: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.875rem;
+}
+
+.results-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.column-selector-options label:hover {
+.results-table th:hover {
+  background-color: #e9ecef;
+}
+
+.results-table tr:hover {
   background-color: #f8f9fa;
 }
 
-.default-badge {
-  font-size: 0.65rem;
-  padding: 0.125rem 0.25rem;
-  background-color: #e9ecef;
-  border-radius: 3px;
-  margin-left: auto;
-  color: #666;
+/* Badge styles */
+.system-badge,
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.system-badge.seg { background-color: #e3f2fd; color: #1976d2; }
+.system-badge.exchange { background-color: #f3e5f5; color: #7b1fa2; }
+.system-badge.encryption { background-color: #e8f5e9; color: #388e3c; }
+.system-badge.postfix { background-color: #fff3e0; color: #f57c00; }
+
+.status-badge.delivered { background-color: #e8f5e9; color: #388e3c; }
+.status-badge.failed { background-color: #ffebee; color: #d32f2f; }
+.status-badge.pending { background-color: #fff3e0; color: #f57c00; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 1rem;
+  }
+
+  .form-row > * {
+    flex: 1 1 100%;
+  }
+
+  .modal {
+    width: 95%;
+    margin: 1rem;
+  }
 }
 </style>
