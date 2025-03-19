@@ -375,7 +375,10 @@
           </div>
 
           <!-- Right column (25%) -->
-          <div class="side-column">
+
+          
+        </div>
+        <div class="side-column">
             <!-- Request Preview -->
             <div class="preview-column">
               <div class="preview-section">
@@ -406,7 +409,6 @@
               {{ error }}
             </div>
           </div>
-        </div>
       </div>
     </main>
 
