@@ -238,7 +238,24 @@
                     class="rows-select"
                   />
                 </BFormGroup>
-
+                <div class="rows-per-page">
+                    <label>
+                      Rows per page:
+                      <select 
+                        v-model="pagination.rowsPerPage"
+                        @change="changeRowsPerPage"
+                        class="rows-select"
+                      >
+                        <option 
+                          v-for="option in pagination.rowsPerPageOptions" 
+                          :key="option" 
+                          :value="option"
+                        >
+                          {{ option }}
+                        </option>
+                      </select>
+                    </label>
+                  </div>
                 <div class="pagination-info">
                   {{ paginationInfo }}
                 </div>
@@ -255,8 +272,8 @@
                     Page {{ pagination.currentPage }} of {{ totalPages }}
                   </span>
                   <button 
-                    @click="pagination.currentPage++" 
-                    :disabled="pagination.currentPage === pagination.totalPages"
+                    @click="nextPage"
+                    :disabled="pagination.currentPage === totalPages"
                     class="pagination-btn"
                   >
                     <span class="pagination-icon">→</span>
@@ -324,24 +341,7 @@
 
                 <!-- Add bottom pagination controls -->
                 <div class="pagination-controls bottom">
-                  <div class="rows-per-page">
-                    <label>
-                      Rows per page:
-                      <select 
-                        v-model="pagination.rowsPerPage"
-                        @change="changeRowsPerPage"
-                        class="rows-select"
-                      >
-                        <option 
-                          v-for="option in pagination.rowsPerPageOptions" 
-                          :key="option" 
-                          :value="option"
-                        >
-                          {{ option }}
-                        </option>
-                      </select>
-                    </label>
-                  </div>
+
 
                   <div class="pagination-info">
                     {{ paginationInfo }}
@@ -359,8 +359,8 @@
                       Page {{ pagination.currentPage }} of {{ totalPages }}
                     </span>
                     <button 
-                      @click="pagination.currentPage++" 
-                      :disabled="pagination.currentPage === pagination.totalPages"
+                      @click="nextPage"
+                      :disabled="pagination.currentPage === totalPages"
                       class="pagination-btn"
                     >
                       <span class="pagination-icon">→</span>
@@ -939,6 +939,11 @@ export default {
         this.visibleColumns = this.visibleColumns.filter(k => k !== key)
       } else {
         this.visibleColumns.push(key)
+      }
+    },
+    nextPage() {
+      if (this.pagination.currentPage < this.totalPages) {
+        this.pagination.currentPage++
       }
     }
   },
@@ -1655,9 +1660,9 @@ input:checked + .slider:before {
 
 .modal {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 20%;
+  left: 20%;
+  transform: translate(-30%, -30%);
   z-index: 1055;
   width: 90%;
   max-width: 800px;

@@ -538,6 +538,14 @@ input:checked + .switch-slider:before {
   opacity: 0.5;
   cursor: not-allowed;
   background-color: #f8f9fa;
+  pointer-events: none;
+}
+
+.pagination-btn:disabled:hover {
+  transform: none;
+  background-color: #f8f9fa;
+  border-color: var(--border-color);
+  color: var(--text-color);
 }
 
 .pagination-icon {
